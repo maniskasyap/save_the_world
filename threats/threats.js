@@ -13,7 +13,7 @@ const heroesService = 'http://heroes:8081';
 const threats = [
   {
     id: 1,
-    displayName: 'Pisa tower is about to collapse - 1.',
+    displayName: 'Pisa tower is about to collapse.',
     necessaryPowers: ['flying'],
     img: 'tower.jpg',
     assignedHero: 0,
