@@ -1,6 +1,9 @@
 const express = require('express');
 const path = require('path');
 const bodyParser = require('body-parser');
+const mongoose = require('mongoose');
+
+const heroes = require('./seed/heroes');
 
 const port = process.argv.slice(2)[0];
 const app = express();
@@ -14,40 +17,37 @@ const powers = [
   { id: 5, name: 'mind reading' },
 ];
 
-const heroes = [
-  {
-    id: 1,
-    type: 'spider-dog',
-    displayName: 'Cooper',
-    powers: [1, 4],
-    img: 'cooper.jpg',
-    busy: false,
-  },
-  {
-    id: 2,
-    type: 'flying-dogs',
-    displayName: 'Jack & Buddy',
-    powers: [2, 5],
-    img: 'jack_buddy.jpg',
-    busy: false,
-  },
-  {
-    id: 3,
-    type: 'dark-light-side',
-    displayName: 'Max & Charlie',
-    powers: [3, 2],
-    img: 'max_charlie.jpg',
-    busy: false,
-  },
-  {
-    id: 4,
-    type: 'captain-dog',
-    displayName: 'Rocky',
-    powers: [1, 5],
-    img: 'rocky.jpg',
-    busy: false,
-  },
-];
+mongoose.connect('mongodb://db:27017/test', {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+});
+const db = mongoose.connection;
+db.on('error', console.error.bind(console, 'connection error: to db - test'));
+db.once('open', function () {
+  console.log('connected to db - test');
+});
+
+const HeroesSchema = new mongoose.Schema({
+  id: Number,
+  type: String,
+  displayName: String,
+  powers: Array,
+  img: String,
+  busy: Boolean,
+});
+
+const HeroesModel = mongoose.model('Heroes', HeroesSchema);
+
+app.get('/heroes/seed', (req, res) => {
+  HeroesModel.insertMany(heroes, (err, docsHeroes) => {
+    res.send(docsHeroes);
+  });
+});
+
+app.get('/heroes/clean', async (req, res) => {
+  const resp = await HeroesModel.remove({});
+  res.send(resp);
+});
 
 app.get('/heroes/:id', (req, res) => {
   console.log('Returning heroes id');
@@ -56,7 +56,11 @@ app.get('/heroes/:id', (req, res) => {
 
 app.get('/heroes', (req, res) => {
   console.log('Returning heroes list');
-  res.send(heroes);
+  HeroesModel.find(function (err, heroes) {
+    if (err) return console.error(err);
+    res.send(heroes);
+  });
+  // res.send(heroes);
 });
 
 app.get('/powers', (req, res) => {
